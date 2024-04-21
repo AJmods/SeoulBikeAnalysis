@@ -44,19 +44,23 @@ $Rented_Bike_Count$&The number of bikes rented\\
 \hline
 \multicolumn{2}{l}{1. Time Varibles} \\
 \hline
-$Date$&The Date\\
-$Hour$&The Hour (between 1 and 24)\\
-$Holiday$&Dummy varible if that day is a holiday or not\\
-$FunctionalDay$&Not sure what this is lol\\
+$Date$&The Date (dd/mm/yyyy)\\
+$Hour$&The Hour (integer between 1 and 24))\\
+$Holiday$&Dummy variable if that day is a holiday or not\\
+$FunctionalDay$&Dummy variable if the bikes were functional or not\\
+$Seasons_Spring$&Dummy variable if the season is Spring or not\\
+$Seasons_Summer$&Dummy variable if the season is Summer or not\\
+$Seasons_Autumn$&Dummy variable if the season is Autumn or not\\
+$Seasons_Winter$&Dummy variable if the season is Winter or not\\
 \hline 
 \multicolumn{2}{l}{2. Weather varibles}\\
 \hline
 $Temperature$&Temperature in Celsius\\
 $Humidity$&Humidity ($\%$)\\
-$Wind_Speed$&Windspeed in meters per second\\
-$Visibility$&Visibility (10m)\\
+$Wind_Speed$&Wind speed in meters per second\\
+$Visibility$&Visibility in Kilometers\\
 $Dew_Point_Temperature$&Dew Point Temperature in Celsius\\
-$Solor_Radiation$&Solor Radiation in MJ/m2\\
+$Solor_Radiation$&Solar Radiation in MJ/m2\\
 $Rainfall$&Rainfall in millimeters\\
 $Snowfall$&Snowfall in centimeters\\
 \hline
@@ -89,6 +93,9 @@ bikeData <- bikeData %>%
          "Rainfall" = "Rainfall.mm.",
          "Snowfall" = "Snowfall..cm.",
          "Functioning_Day" = "Functioning.Day")
+
+#divide the visibility by 100 to change it's units from 10s of meters to kilometers
+bikeData$Visibility <- bikeData$Visibility / 100
 
 # Dummy varibles
 bikeData$Holiday <- ifelse(bikeData$Holiday == "No Holiday", 0, 1)
