@@ -29,9 +29,12 @@ knitr::opts_chunk$set(echo = TRUE, prompt=FALSE, message = FALSE,comment=NA )
 # Question
 Can we predict the number of riders using the Seoul Bike Sharing based on the date and the weather?
 
+# Methods
+We plan on using Lasso, Ridge, Decision tree and random forest for this dataset.
+
 ## The Dataset
 
-This is a dataset containing Seoul Bike sharing ridership from December 1, 2017 to November 30, 2018.  The objective is to predict the number of riders on at any given time across the year given the data shown in this dataset
+This is a dataset containing Seoul Bike sharing ridership from December 1, 2017 to November 30, 2018.
 
 \small
 \begin{center}
