@@ -30,7 +30,7 @@ knitr::opts_chunk$set(echo = TRUE, prompt=FALSE, message = FALSE,comment=NA )
 Can we predict the number of riders using the Seoul Bike Sharing based on the date and the weather?
 
 # Methods
-We plan on using Lasso, Ridge, Decision tree and random forest for this dataset.
+We plan on using Lasso, Ridge, Decision tree and Random forest for this Dataset.
 
 ## The Dataset
 
@@ -55,6 +55,7 @@ $Date$&The Date (dd/mm/yyyy)\\
 $Hour$&The Hour (integer between 1 and 24)\\
 $Holiday$&Dummy variable if the day is a holiday or not\\
 $Weekend$&Dummy variable if the day is a weekend or not\\
+$wkdhol$&Dummy variable.  Merged Holiday and Weekend variables together\\
 $FunctionalDay$&Dummy variable if the bikes were functional or not\\
 $Seasons_Spring$&Dummy variable if the season is Spring or not\\
 $Seasons_Summer$&Dummy variable if the season is Summer or not\\
@@ -105,7 +106,7 @@ bikeData <- bikeData %>%
 #divide the visibility by 100 to change it's units from 10s of meters to kilometers
 bikeData$Visibility <- bikeData$Visibility / 100
 
-#add weekend:
+#add weekend variable
 bikeData$Weekend <- ifelse(lubridate::wday(as.Date(bikeData$Date,format = "%d/%m/%Y"), week_start = 1) > 5,1,0)
 #lubridate::wday(as.Date("21/04/2024",format = "%d/%m/%Y"),label = TRUE, week_start = 1)
 
@@ -121,6 +122,25 @@ bikeData <- bikeData %>% dummy_cols(select_columns = c("Seasons"))
 #We will only use data where the bikes are functioning.
 bikeData <- bikeData %>% filter(Functioning_Day == 1)
 
-summary(bikeData)
+#combine weekend with holidays
+# let's use this variable instead of weekend and holidays.  
+bikeData$wkdHol <- ifelse(bikeData$Holiday == 1 | bikeData$Weekend == 1, 1, 0)
+
+# summary(bikeData)
+```
+
+``` {r trainDataset}
+
+# Split dataset into test and train.
+set.seed(42069)
+train_index<-sample(c(TRUE,FALSE),nrow(bikeData),replace=TRUE, prob=c(.8,.2))
+
+bikeData.train <- bikeData[train_index,]
+bikeData.test <- bikeData[!train_index,]
+
+#Check number of observations
+nrow(bikeData.train)
+nrow(bikeData.test)
+
 ```
 
