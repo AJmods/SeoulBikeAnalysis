@@ -55,7 +55,6 @@ $Date$&The Date (dd/mm/yyyy)\\
 $Hour$&The Hour (integer between 1 and 24)\\
 $Holiday$&Dummy variable if the day is a holiday or not\\
 $Weekend$&Dummy variable if the day is a weekend or not\\
-$wkdhol$&Dummy variable.  Merged Holiday and Weekend variables together\\
 $FunctionalDay$&Dummy variable if the bikes were functional or not\\
 $Seasons_Spring$&Dummy variable if the season is Spring or not\\
 $Seasons_Summer$&Dummy variable if the season is Summer or not\\
@@ -126,6 +125,8 @@ bikeData <- bikeData %>% filter(Functioning_Day == 1)
 # let's use this variable instead of weekend and holidays.  
 bikeData$wkdHol <- ifelse(bikeData$Holiday == 1 | bikeData$Weekend == 1, 1, 0)
 
+bikeData <- bikeData %>% subset(select= -c(Holiday,Weekend,Date, Functioning_Day, Seasons))
+
 # summary(bikeData)
 ```
 
@@ -143,4 +144,90 @@ nrow(bikeData.train)
 nrow(bikeData.test)
 
 ```
+# Running Random Forest
+We are using rftune() to for randomForest.  It finds the perfect mtry and tunes the model.
+```{r tune}
+library(randomForest)
+library(doMC)
+#install.packages("doMC", repos="http://R-Forge.R-project.org")
 
+registerDoMC(6) 
+# this model takes a long time to train, so if we have the file on hand then let's use it.  
+trainNewModel = FALSE
+file_name <- "bikingInARandomForest.rds"
+
+if (trainNewModel | !file.exists(file_name)) {
+  bag.bikes.train <- tuneRF(bikeData.train[,-1], bikeData.train[,1],ntreeTry = 2000,stepFactor=1.5, improve=0.01, doBest = TRUE)
+
+    #Save model
+  saveRDS(bag.bikes.train,file_name)
+
+
+} else {
+  bag.bikes.train <- readRDS(file_name)
+
+  #bag.bikes.train <- as_parsed_model(loaded_model)
+}
+# bag.bikes.train
+
+```
+```{r randomForest}
+#library(randomForest)
+#big.bikes.train = randomForest(Rented_Bike_Count~.,data=bikeData.train, mtry=best_mtry, importance =TRUE,ntree=2000)
+
+#big.bikes.train
+```
+
+# Mean Squared Error
+```{r}
+resid=bikeData.train$Rented_Bike_Count-bag.bikes.train$predicted
+mse=mean(resid^2)
+mse
+```
+# Tree graph
+```{r}
+df_numtree<-data.frame(num_tree=seq(1,500,length.out=500), mse=bag.bikes.train$mse)
+ggplot(aes(x=num_tree,y=mse),data=df_numtree)+
+  geom_line(color="blue")+
+  ylab("OOB MSE")+xlab("Number of trees in bagging")+
+ theme(plot.title = element_text(hjust = 0.5,size=14),
+          panel.background = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          axis.title=element_text(size=11),
+          axis.line = element_line(colour = "gray"))
+```
+# Prediction
+```{r, collapse=TRUE, fig.align='center'}
+
+bag.predict = predict (bag.bikes.train ,newdata =bikeData.test)
+
+# plot Rented Bike Count and the predicted Rented Bike Count. How well they line up with the 45 degree line?
+plot(bag.predict,bikeData.test$Rented_Bike_Count,ylab="Predicted Rented Bike Count",
+     xlab="Actual Rented Bike Count", main="bagging")
+abline(0,1)
+
+# compute the prediction error 
+bag.te<-mean((bikeData.test$Rented_Bike_Count-bag.predict)^2)
+bag.te
+```
+
+```{r importance}
+df.relative.imp<-data.frame(vars=rownames(bag.bikes.train$importance),rel_imp=(bag.bikes.train$importance[,1]/bag.bikes.train$importance[which.max(bag.bikes.train$importance[,1]),1])*100)
+
+df.relative.imp<-df.relative.imp[order(-df.relative.imp$rel_imp),]
+
+gout_varimp<-ggplot(data=df.relative.imp[1:10,],aes(x=reorder(vars, rel_imp),y=rel_imp)) +
+  geom_bar(stat="identity", fill="gray70")+coord_flip()+
+  geom_text(aes(label=vars), vjust=0,color="lightblue4", size=4)+
+  ggtitle("Relative Variable Importance measured with reduced RSS")+
+  ylab("relative importance")+
+  xlab("variables")+
+  theme(plot.title = element_text(hjust = 0.5,size=13),
+          panel.background = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          axis.title=element_text(size=11),
+          axis.line = element_line(colour = "gray"))
+gout_varimp
+```
